@@ -1,0 +1,6 @@
+.env
+*.idea
+runs
+__pycache__/
+*.pyc
+real-life-chess-vision

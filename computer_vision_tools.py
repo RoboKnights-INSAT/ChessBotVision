@@ -379,6 +379,65 @@ def fix_queen_king_issue(past_fen, current_fen):
     return '/'.join([''.join(row) for row in updated_fen_list])
 
 
+def fix_fen(past_fen, current_fen):
+    past_fen_list = [list(row) for row in past_fen.split("/")]
+    current_fen_list = [list(row) for row in current_fen.split("/")]
+    updated_fen_list = [list(row) for row in current_fen.split("/")]
+
+    white_pieces = ['P', 'N', 'R', 'B', 'Q', 'K']
+    black_pieces = ['p', 'n', 'r', 'b', 'q', 'k']
+
+    for i in range(8):
+        for j in range(8):
+            # static checking
+            if past_fen_list[i][j] != current_fen_list[i][j]:
+                # Fix static miss predictions
+                if (past_fen_list[i][j] in black_pieces and current_fen_list[i][j] in black_pieces) or (
+                        past_fen_list[i][j] in white_pieces and current_fen_list[i][j] in white_pieces):
+                    updated_fen_list[i][j] = past_fen_list[i][j]
+                # Fix dynamic miss predictions
+
+                if (current_fen_list[i][j] == '1'):  # a move happened
+                    # check  boxes based on move patterns of the chess pieces
+                    positions = []
+                    piece = past_fen_list[i][j]
+                    if piece == 'p':
+                        positions = [[i + 1, j + x] for x in range(-1, 2) if 0 <= j + x <= 7 and i + 1 <= 7]
+                    if piece == 'P':
+                        positions = [[i - 1, j + x] for x in range(-1, 2) if 0 <= j + x <= 7 and 0 <= i - 1]
+                    elif piece in ['r', 'R']:
+                        positions = [[x, j] for x in range(8) if x != i] + [[i, y] for y in range(8) if y != j]
+                    elif piece in ['b', 'B']:
+                        positions = [[i + x, j + x] for x in range(-7, 8) if
+                                     0 <= i + x <= 7 and 0 <= j + x <= 7 and x != 0] + [[i - x, j + x] for x in
+                                                                                        range(-7, 8) if
+                                                                                        0 <= i - x <= 7 and 0 <= j + x <= 7 and x != 0]
+                        print(positions)
+                    elif piece in ['q', 'Q']:
+                        positions = [[x, j] for x in range(8) if x != i] + [[i, y] for y in range(8) if y != j] + [
+                            [i + x, j + x] for x in range(-7, 8) if 0 <= i + x <= 7 and 0 <= j + x <= 7 and x != 0] + [
+                                        [i - x, j + x] for x in range(-7, 8) if
+                                        0 <= i - x <= 7 and 0 <= j + x <= 7 and x != 0]
+                    elif piece in ['k', 'K']:
+                        positions = [[x, y] for x in range(max(i - 1, 0), min(i + 1, 7) + 1) for y in
+                                     range(max(j - 1, 0), min(j + 1, 7) + 1) if not (x == i and y == j)]
+                    else:  # knignt :)
+                        positions = [
+                            [i + dx, j + dy]
+                            for dx, dy in [
+                                (2, 1), (2, -1), (-2, 1), (-2, -1),
+                                (1, 2), (1, -2), (-1, 2), (-1, -2)
+                            ]
+                            if 0 <= i + dx <= 7 and 0 <= j + dy <= 7
+                        ]
+                    for pos in positions:
+                        if (piece in white_pieces and current_fen_list[pos[0]][pos[1]] in white_pieces and
+                            past_fen_list[pos[0]][pos[1]] not in white_pieces) or (
+                                piece in black_pieces and current_fen_list[pos[0]][pos[1]] in black_pieces and
+                                past_fen_list[pos[0]][pos[1]] not in black_pieces):
+                            updated_fen_list[pos[0]][pos[1]] = piece
+
+    return '/'.join([''.join(row) for row in updated_fen_list])
 def make_black_spots_blacker(image_path, output_path, threshold=50):
     """
     Enhances the black spots/pieces in the image by making them darker.

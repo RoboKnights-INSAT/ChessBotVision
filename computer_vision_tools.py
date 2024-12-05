@@ -466,11 +466,27 @@ def make_black_spots_blacker(image_path, output_path, threshold=50):
     img.save(output_path)
     print(f"Image saved to {output_path}")
 
+# def detect_board(image_Path,corners, additional_height,chess_piece_detection_confidence, grayscale_intensity_threshold):
+#
+#     transformed_image = four_point_transform(image_Path, corners, additional_height)
+#
+#     make_black_spots_blacker("transformer_image.jpg", "transformer_image.jpg", grayscale_intensity_threshold)
+#
+#     ptsT, ptsL = plot_grid_on_transformed_image(transformed_image, additional_height)
+#
+#     detections, boxes = chess_pieces_detector_local(transformed_image, chess_piece_detection_confidence)
+#
+#     complete_board_FEN = FEN_transformation(ptsT, ptsL, detections, boxes)
+#
+#     current_fen = '/'.join(complete_board_FEN)
+#
+#     return current_fen
+
 def detect_board(image_Path,corners, additional_height,chess_piece_detection_confidence, grayscale_intensity_threshold):
 
     transformed_image = four_point_transform(image_Path, corners, additional_height)
 
-    make_black_spots_blacker("transformer_image.jpg", "transformer_image.jpg", grayscale_intensity_threshold)
+    #make_black_spots_blacker("transformer_image.jpg", "transformer_image.jpg", grayscale_intensity_threshold)
 
     ptsT, ptsL = plot_grid_on_transformed_image(transformed_image, additional_height)
 

@@ -139,6 +139,7 @@ def print_board_from_fen(fen):
     board = chess.Board(fen)
     print(board)
 
+
 def disable_special_moves(stockfish):
     # Get the current FEN
     fen = stockfish.get_fen_position()

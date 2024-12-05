@@ -1,7 +1,7 @@
 # Import necessary libraries
 import time
-from ChessTools import *
-from computer_vision_tools import *
+from tools.ChessTools import *
+from tools.computer_vision_tools import *
 import serial
 import RPi.GPIO as GPIO
 
@@ -15,7 +15,7 @@ corners = []
 chess_corner_detection_confidence = 9
 chess_piece_detection_confidence = 40
 grayscale_intensity_threshold = 70
-image_Path = "images/image.png"
+image_Path = "../images/image.png"
 fen0 = "rnbqkbnr/pppppppp/11111111/11111111/11111111/11111111/PPPPPPPP/RNBQKBNR"
 past_fen = ""
 stockfish_path = "./Stockfish/src/stockfish"

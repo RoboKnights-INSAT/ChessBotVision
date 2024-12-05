@@ -64,15 +64,51 @@ def detect_corners_API(image_Path, confidence=50):
     return np.array(corners, dtype="float32")
 
 
+def visualize_bounding_boxes(image_path, detection_results, output_path="..\outputs\output_with_boxes.jpg"):
+    """
+    Visualize bounding boxes of detected corners on the image and save it in JPG format.
+
+    Args:
+        image_path (str): Path to the input image.
+        detection_results: The results object from the YOLO model's prediction, containing bounding boxes.
+        output_path (str): Path to save the output image with visualized bounding boxes in JPG format.
+    """
+    # Load the image
+    image = cv2.imread(image_path)
+    if image is None:
+        raise FileNotFoundError(f"Image not found at path: {image_path}")
+
+    # Iterate through bounding boxes and visualize them
+    for box in detection_results[0].boxes[:4]:  # Access the first result
+        x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())  # Extract bounding box coordinates
+        confidence = box.conf[0]  # Confidence score
+        label = int(box.cls[0])  # Class label (if applicable)
+
+        # Draw a rectangle (bounding box)
+        cv2.rectangle(image, (x1, y1), (x2, y2), color=(0, 0, 255), thickness=2)  # Green bounding box
+
+        # Optionally, label the bounding box with class and confidence
+        label_text = f"{label} ({confidence:.2f})"
+        cv2.putText(image, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+    # Save the output image explicitly in JPG format
+    if not output_path.lower().endswith(".jpg"):
+        output_path = output_path.rsplit('.', 1)[0] + ".jpg"
+    cv2.imwrite(output_path, image, [cv2.IMWRITE_JPEG_QUALITY, 95])  # Save as JPG with quality setting
+    print(f"Output image with bounding boxes saved at: {output_path}")
+
+
 def detect_corners_local(image_Path, confidence=50):
-    model = YOLO("best_corner_detection_model.pt")
+    model = YOLO("../models/best_corner_detection_model.pt")
 
     # Run detection on the image
     results = model.predict(image_Path, conf=confidence / 100)
-    #print(results)
+
+    visualize_bounding_boxes(image_Path, results)
+
+    # print(results)
     # Access the first element of the results list
     first_result = results[0]
-
     for detection in results[0].boxes:  # Access the first result and iterate over each detected box
         # Extract corner coordinates
         x1, y1, x2, y2 = detection.xyxy[0]  # Bounding box coordinates
@@ -132,9 +168,11 @@ def four_point_transform(image, pts, additional_height=0):
     img = Image.fromarray(warped, "RGB")
     # img.show()
     # return the warped image
-    img.save("transformer_image.jpg")
+    img.save("../outputs/transformer_image.jpg")
     return img
 
+
+# calculates chessboard grid
 
 # calculates chessboard grid
 
@@ -184,7 +222,7 @@ def plot_grid_on_transformed_image(image, additional_height=0):
 
     plt.axis('off')
 
-    plt.savefig('chessboard_transformed_with_grid.jpg')
+    plt.savefig('../outputs/chessboard_transformed_with_grid.jpg')
     return ptsT, ptsL
 
 
@@ -219,12 +257,95 @@ def chess_pieces_detector_API(image):
 
     return detections, boxes
 
+
+def visualize_chess_pieces(image_path, detection_results, output_path="..\outputs\output_with_chess_pieces.jpg"):
+    """
+    Visualize bounding boxes for detected chess pieces with class names and colors.
+
+    Args:
+        image_path (str): Path to the input image.
+        detection_results: The results object from the YOLO model's prediction, containing bounding boxes.
+        output_path (str): Path to save the output image with visualized bounding boxes in JPG format.
+    """
+    # Define a color map for different chess piece classes
+    CLASS_COLOR_MAP = {
+        0: (0, 0, 255),  # Red - Black Bishop
+        1: (0, 255, 0),  # Green - Black King
+        2: (255, 0, 0),  # Blue - Black Knight
+        3: (255, 255, 0),  # Cyan - Black Pawn
+        4: (255, 0, 255),  # Magenta - Black Queen
+        5: (0, 255, 255),  # Yellow - Black Rook
+        6: (128, 0, 0),  # Dark Red - White Bishop
+        7: (0, 128, 0),  # Dark Green - White King
+        8: (0, 0, 128),  # Dark Blue - White Knight
+        9: (128, 128, 0),  # Olive - White Pawn
+        10: (128, 0, 128),  # Purple - White Queen
+        11: (0, 128, 128),  # Teal - White Rook
+    }
+
+    CLASS_LABEL_MAP = {
+        0: "Black Bishop",
+        1: "Black King",
+        2: "Black Knight",
+        3: "Black Pawn",
+        4: "Black Queen",
+        5: "Black Rook",
+        6: "White Bishop",
+        7: "White King",
+        8: "White Knight",
+        9: "White Pawn",
+        10: "White Queen",
+        11: "White Rook",
+    }
+    # Load the image
+    image = cv2.imread(image_path)
+    if image is None:
+        raise FileNotFoundError(f"Image not found at path: {image_path}")
+
+    # Iterate through bounding boxes and visualize them
+    for box in detection_results[0].boxes:  # Access the first result
+
+        x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())  # Bounding box coordinates
+        confidence = box.conf[0]  # Confidence score
+        class_id = int(box.cls[0])  # Class ID
+
+        # Get the color and label for the class
+        color = CLASS_COLOR_MAP.get(class_id, (255, 255, 255))  # Default to white if class not found
+        label = CLASS_LABEL_MAP.get(class_id, "Unknown")
+
+        # Draw the bounding box
+        cv2.rectangle(image, (x1, y1), (x2, y2), color=color, thickness=2)
+
+        # Add class name and confidence score with larger text
+        label_text = f"{label} ({confidence:.2f})"
+        font_scale = 1.0  # Increased font scale for larger text
+        thickness = 2  # Increased thickness for better visibility
+        text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+        text_x = x1
+        text_y = max(y1 - 10, text_size[1] + 10)  # Ensure text is always visible
+
+        # Background rectangle for text
+        cv2.rectangle(image, (text_x, text_y - text_size[1] - 5),
+                      (text_x + text_size[0] + 5, text_y + 5),
+                      color, thickness=-1)  # Filled rectangle with the same color
+
+        # Overlay text
+        cv2.putText(image, label_text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255),
+                    thickness)
+
+    # Save the output image explicitly in JPG format
+    if not output_path.lower().endswith(".jpg"):
+        output_path = output_path.rsplit('.', 1)[0] + ".jpg"
+    cv2.imwrite(output_path, image, [cv2.IMWRITE_JPEG_QUALITY, 95])  # Save as JPG with quality setting
+    print(f"Output image with chess piece borders saved at: {output_path}")
+
 def chess_pieces_detector_local(image, confidence=50):
-    model = YOLO("best_chesspiece_model.pt")
+    model = YOLO("../models/best_chesspiece_model.pt")
 
     # Run detection on the image
-    results = model.predict("transformer_image.jpg", conf=confidence / 100)
+    results = model.predict("../outputs/transformer_image.jpg", conf=confidence / 100)
 
+    visualize_chess_pieces("../outputs/transformer_image.jpg", results)
     # Access the first element of the results list
     first_result = results[0]
 
@@ -421,7 +542,7 @@ def fix_fen(past_fen, current_fen):
                     elif piece in ['k', 'K']:
                         positions = [[x, y] for x in range(max(i - 1, 0), min(i + 1, 7) + 1) for y in
                                      range(max(j - 1, 0), min(j + 1, 7) + 1) if not (x == i and y == j)]
-                    else:  # knignt :)
+                    else:  # knight :)
                         positions = [
                             [i + dx, j + dy]
                             for dx, dy in [

@@ -95,6 +95,29 @@ def determine_chess_move(past_fen, current_fen):
     return start + finish + promote
 
 
+def is_one_move(past_fen, current_fen):
+    past_fen_list = past_fen.split("/")
+    past_fen_list.reverse()
+    current_fen_list = current_fen.split("/")
+    current_fen_list.reverse()
+    start_key = True
+    finish_key = True
+    for i in range(8):
+        for j in range(8):
+            if past_fen_list[i][j] != current_fen_list[i][j]:
+                if (current_fen_list[i][j] == '1') and (start_key):
+                    start_key = False
+                elif finish_key:
+                    finish_key = False
+                else:
+                    print("past and current fen are seperated by multiple moves")
+                    return False  # false value
+    if start_key or finish_key:
+        print("past and current fen are seperated by half a move or identical")
+        return False  # false value
+
+    return True
+
 def is_move_valid(past_fen, move):
     past_fen = compress_fen(past_fen)
     # Initialize the board with the previous FEN position
@@ -115,6 +138,7 @@ def is_move_valid(past_fen, move):
 def print_board_from_fen(fen):
     board = chess.Board(fen)
     print(board)
+
 
 def disable_special_moves(stockfish):
     # Get the current FEN

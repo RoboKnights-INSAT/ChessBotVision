@@ -1,7 +1,7 @@
 # Import necessary libraries
 import time
-from ChessTools import *
-from computer_vision_tools import *
+from tools.ChessTools import *
+from tools.computer_vision_tools import *
 import serial
 import RPi.GPIO as GPIO
 
@@ -15,7 +15,7 @@ corners = []
 chess_corner_detection_confidence = 9
 chess_piece_detection_confidence = 40
 grayscale_intensity_threshold = 70
-image_Path = "images/image.png"
+image_Path = "../images/image.png"
 fen0 = "rnbqkbnr/pppppppp/11111111/11111111/11111111/11111111/PPPPPPPP/RNBQKBNR"
 past_fen = ""
 stockfish_path = "./Stockfish/src/stockfish"
@@ -213,14 +213,12 @@ def main():
 
                         # print_board_from_fen(current_fen)
 
-                        current_fen = fix_queen_king_issue(past_fen, current_fen)
+                        if not is_one_move(past_fen,current_fen):#check if there is more than 1 or no moves made
+                            continue
+
+                        current_fen = fix_fen(past_fen, current_fen)
 
                         print_board_from_fen(current_fen)
-
-                        if current_fen == past_fen:
-                            print("no move detected")
-                            child_made_move = False
-                            break
 
                         move = determine_chess_move(past_fen,current_fen)
 
@@ -263,7 +261,7 @@ def main():
 
 # Cleanup GPIO
 def cleanup_gpio():
-    #GPIO.cleanup()
+    GPIO.cleanup()
     print("GPIO cleaned up.")
 
 

@@ -64,15 +64,51 @@ def detect_corners_API(image_Path, confidence=50):
     return np.array(corners, dtype="float32")
 
 
+def visualize_bounding_boxes(image_path, detection_results, output_path="..\outputs\output_with_boxes.jpg"):
+    """
+    Visualize bounding boxes of detected corners on the image and save it in JPG format.
+
+    Args:
+        image_path (str): Path to the input image.
+        detection_results: The results object from the YOLO model's prediction, containing bounding boxes.
+        output_path (str): Path to save the output image with visualized bounding boxes in JPG format.
+    """
+    # Load the image
+    image = cv2.imread(image_path)
+    if image is None:
+        raise FileNotFoundError(f"Image not found at path: {image_path}")
+
+    # Iterate through bounding boxes and visualize them
+    for box in detection_results[0].boxes[:4]:  # Access the first result
+        x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())  # Extract bounding box coordinates
+        confidence = box.conf[0]  # Confidence score
+        label = int(box.cls[0])  # Class label (if applicable)
+
+        # Draw a rectangle (bounding box)
+        cv2.rectangle(image, (x1, y1), (x2, y2), color=(0, 0, 255), thickness=2)  # Green bounding box
+
+        # Optionally, label the bounding box with class and confidence
+        label_text = f"{label} ({confidence:.2f})"
+        cv2.putText(image, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+    # Save the output image explicitly in JPG format
+    if not output_path.lower().endswith(".jpg"):
+        output_path = output_path.rsplit('.', 1)[0] + ".jpg"
+    cv2.imwrite(output_path, image, [cv2.IMWRITE_JPEG_QUALITY, 95])  # Save as JPG with quality setting
+    print(f"Output image with bounding boxes saved at: {output_path}")
+
+
 def detect_corners_local(image_Path, confidence=50):
-    model = YOLO("best_corner_detection_model.pt")
+    model = YOLO("../models/best_corner_detection_model.pt")
 
     # Run detection on the image
     results = model.predict(image_Path, conf=confidence / 100)
-    #print(results)
+
+    visualize_bounding_boxes(image_Path, results)
+
+    # print(results)
     # Access the first element of the results list
     first_result = results[0]
-
     for detection in results[0].boxes:  # Access the first result and iterate over each detected box
         # Extract corner coordinates
         x1, y1, x2, y2 = detection.xyxy[0]  # Bounding box coordinates
@@ -132,9 +168,11 @@ def four_point_transform(image, pts, additional_height=0):
     img = Image.fromarray(warped, "RGB")
     # img.show()
     # return the warped image
-    img.save("transformer_image.jpg")
+    img.save("../outputs/transformer_image.jpg")
     return img
 
+
+# calculates chessboard grid
 
 # calculates chessboard grid
 
@@ -184,7 +222,7 @@ def plot_grid_on_transformed_image(image, additional_height=0):
 
     plt.axis('off')
 
-    plt.savefig('chessboard_transformed_with_grid.jpg')
+    plt.savefig('../outputs/chessboard_transformed_with_grid.jpg')
     return ptsT, ptsL
 
 
@@ -219,12 +257,95 @@ def chess_pieces_detector_API(image):
 
     return detections, boxes
 
+
+def visualize_chess_pieces(image_path, detection_results, output_path="..\outputs\output_with_chess_pieces.jpg"):
+    """
+    Visualize bounding boxes for detected chess pieces with class names and colors.
+
+    Args:
+        image_path (str): Path to the input image.
+        detection_results: The results object from the YOLO model's prediction, containing bounding boxes.
+        output_path (str): Path to save the output image with visualized bounding boxes in JPG format.
+    """
+    # Define a color map for different chess piece classes
+    CLASS_COLOR_MAP = {
+        0: (0, 0, 255),  # Red - Black Bishop
+        1: (0, 255, 0),  # Green - Black King
+        2: (255, 0, 0),  # Blue - Black Knight
+        3: (255, 255, 0),  # Cyan - Black Pawn
+        4: (255, 0, 255),  # Magenta - Black Queen
+        5: (0, 255, 255),  # Yellow - Black Rook
+        6: (128, 0, 0),  # Dark Red - White Bishop
+        7: (0, 128, 0),  # Dark Green - White King
+        8: (0, 0, 128),  # Dark Blue - White Knight
+        9: (128, 128, 0),  # Olive - White Pawn
+        10: (128, 0, 128),  # Purple - White Queen
+        11: (0, 128, 128),  # Teal - White Rook
+    }
+
+    CLASS_LABEL_MAP = {
+        0: "Black Bishop",
+        1: "Black King",
+        2: "Black Knight",
+        3: "Black Pawn",
+        4: "Black Queen",
+        5: "Black Rook",
+        6: "White Bishop",
+        7: "White King",
+        8: "White Knight",
+        9: "White Pawn",
+        10: "White Queen",
+        11: "White Rook",
+    }
+    # Load the image
+    image = cv2.imread(image_path)
+    if image is None:
+        raise FileNotFoundError(f"Image not found at path: {image_path}")
+
+    # Iterate through bounding boxes and visualize them
+    for box in detection_results[0].boxes:  # Access the first result
+
+        x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())  # Bounding box coordinates
+        confidence = box.conf[0]  # Confidence score
+        class_id = int(box.cls[0])  # Class ID
+
+        # Get the color and label for the class
+        color = CLASS_COLOR_MAP.get(class_id, (255, 255, 255))  # Default to white if class not found
+        label = CLASS_LABEL_MAP.get(class_id, "Unknown")
+
+        # Draw the bounding box
+        cv2.rectangle(image, (x1, y1), (x2, y2), color=color, thickness=2)
+
+        # Add class name and confidence score with larger text
+        label_text = f"{label} ({confidence:.2f})"
+        font_scale = 1.0  # Increased font scale for larger text
+        thickness = 2  # Increased thickness for better visibility
+        text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+        text_x = x1
+        text_y = max(y1 - 10, text_size[1] + 10)  # Ensure text is always visible
+
+        # Background rectangle for text
+        cv2.rectangle(image, (text_x, text_y - text_size[1] - 5),
+                      (text_x + text_size[0] + 5, text_y + 5),
+                      color, thickness=-1)  # Filled rectangle with the same color
+
+        # Overlay text
+        cv2.putText(image, label_text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255),
+                    thickness)
+
+    # Save the output image explicitly in JPG format
+    if not output_path.lower().endswith(".jpg"):
+        output_path = output_path.rsplit('.', 1)[0] + ".jpg"
+    cv2.imwrite(output_path, image, [cv2.IMWRITE_JPEG_QUALITY, 95])  # Save as JPG with quality setting
+    print(f"Output image with chess piece borders saved at: {output_path}")
+
 def chess_pieces_detector_local(image, confidence=50):
-    model = YOLO("best_chesspiece_model.pt")
+    model = YOLO("../models/best_chesspiece_model.pt")
 
     # Run detection on the image
-    results = model.predict("transformer_image.jpg", conf=confidence / 100)
+    results = model.predict("../outputs/transformer_image.jpg", conf=confidence / 100)
 
+    visualize_chess_pieces("../outputs/transformer_image.jpg", results)
     # Access the first element of the results list
     first_result = results[0]
 
@@ -264,112 +385,25 @@ def connect_detection_to_square(squares, detection_box):
 
 
 def FEN_transformation(ptsT, ptsL, detections, boxes):
-    # calculate the grid
+    # Extract x-coordinates and y-coordinates from points
+    x_coords = [pt[0] for pt in ptsT]
+    y_coords = [pt[1] for pt in ptsL]
 
-    xA = ptsT[0][0]
-    xB = ptsT[1][0]
-    xC = ptsT[2][0]
-    xD = ptsT[3][0]
-    xE = ptsT[4][0]
-    xF = ptsT[5][0]
-    xG = ptsT[6][0]
-    xH = ptsT[7][0]
-    xI = ptsT[8][0]
+    # Initialize the FEN annotation grid
+    FEN_annotation = []
 
-    y9 = ptsL[0][1]
-    y8 = ptsL[1][1]
-    y7 = ptsL[2][1]
-    y6 = ptsL[3][1]
-    y5 = ptsL[4][1]
-    y4 = ptsL[5][1]
-    y3 = ptsL[6][1]
-    y2 = ptsL[7][1]
-    y1 = ptsL[8][1]
-
-    # calculate all the squares
-
-    a8 = np.array([[xA, y9], [xB, y9], [xB, y8], [xA, y8]])
-    a7 = np.array([[xA, y8], [xB, y8], [xB, y7], [xA, y7]])
-    a6 = np.array([[xA, y7], [xB, y7], [xB, y6], [xA, y6]])
-    a5 = np.array([[xA, y6], [xB, y6], [xB, y5], [xA, y5]])
-    a4 = np.array([[xA, y5], [xB, y5], [xB, y4], [xA, y4]])
-    a3 = np.array([[xA, y4], [xB, y4], [xB, y3], [xA, y3]])
-    a2 = np.array([[xA, y3], [xB, y3], [xB, y2], [xA, y2]])
-    a1 = np.array([[xA, y2], [xB, y2], [xB, y1], [xA, y1]])
-
-    b8 = np.array([[xB, y9], [xC, y9], [xC, y8], [xB, y8]])
-    b7 = np.array([[xB, y8], [xC, y8], [xC, y7], [xB, y7]])
-    b6 = np.array([[xB, y7], [xC, y7], [xC, y6], [xB, y6]])
-    b5 = np.array([[xB, y6], [xC, y6], [xC, y5], [xB, y5]])
-    b4 = np.array([[xB, y5], [xC, y5], [xC, y4], [xB, y4]])
-    b3 = np.array([[xB, y4], [xC, y4], [xC, y3], [xB, y3]])
-    b2 = np.array([[xB, y3], [xC, y3], [xC, y2], [xB, y2]])
-    b1 = np.array([[xB, y2], [xC, y2], [xC, y1], [xB, y1]])
-
-    c8 = np.array([[xC, y9], [xD, y9], [xD, y8], [xC, y8]])
-    c7 = np.array([[xC, y8], [xD, y8], [xD, y7], [xC, y7]])
-    c6 = np.array([[xC, y7], [xD, y7], [xD, y6], [xC, y6]])
-    c5 = np.array([[xC, y6], [xD, y6], [xD, y5], [xC, y5]])
-    c4 = np.array([[xC, y5], [xD, y5], [xD, y4], [xC, y4]])
-    c3 = np.array([[xC, y4], [xD, y4], [xD, y3], [xC, y3]])
-    c2 = np.array([[xC, y3], [xD, y3], [xD, y2], [xC, y2]])
-    c1 = np.array([[xC, y2], [xD, y2], [xD, y1], [xC, y1]])
-
-    d8 = np.array([[xD, y9], [xE, y9], [xE, y8], [xD, y8]])
-    d7 = np.array([[xD, y8], [xE, y8], [xE, y7], [xD, y7]])
-    d6 = np.array([[xD, y7], [xE, y7], [xE, y6], [xD, y6]])
-    d5 = np.array([[xD, y6], [xE, y6], [xE, y5], [xD, y5]])
-    d4 = np.array([[xD, y5], [xE, y5], [xE, y4], [xD, y4]])
-    d3 = np.array([[xD, y4], [xE, y4], [xE, y3], [xD, y3]])
-    d2 = np.array([[xD, y3], [xE, y3], [xE, y2], [xD, y2]])
-    d1 = np.array([[xD, y2], [xE, y2], [xE, y1], [xD, y1]])
-
-    e8 = np.array([[xE, y9], [xF, y9], [xF, y8], [xE, y8]])
-    e7 = np.array([[xE, y8], [xF, y8], [xF, y7], [xE, y7]])
-    e6 = np.array([[xE, y7], [xF, y7], [xF, y6], [xE, y6]])
-    e5 = np.array([[xE, y6], [xF, y6], [xF, y5], [xE, y5]])
-    e4 = np.array([[xE, y5], [xF, y5], [xF, y4], [xE, y4]])
-    e3 = np.array([[xE, y4], [xF, y4], [xF, y3], [xE, y3]])
-    e2 = np.array([[xE, y3], [xF, y3], [xF, y2], [xE, y2]])
-    e1 = np.array([[xE, y2], [xF, y2], [xF, y1], [xE, y1]])
-
-    f8 = np.array([[xF, y9], [xG, y9], [xG, y8], [xF, y8]])
-    f7 = np.array([[xF, y8], [xG, y8], [xG, y7], [xF, y7]])
-    f6 = np.array([[xF, y7], [xG, y7], [xG, y6], [xF, y6]])
-    f5 = np.array([[xF, y6], [xG, y6], [xG, y5], [xF, y5]])
-    f4 = np.array([[xF, y5], [xG, y5], [xG, y4], [xF, y4]])
-    f3 = np.array([[xF, y4], [xG, y4], [xG, y3], [xF, y3]])
-    f2 = np.array([[xF, y3], [xG, y3], [xG, y2], [xF, y2]])
-    f1 = np.array([[xF, y2], [xG, y2], [xG, y1], [xF, y1]])
-
-    g8 = np.array([[xG, y9], [xH, y9], [xH, y8], [xG, y8]])
-    g7 = np.array([[xG, y8], [xH, y8], [xH, y7], [xG, y7]])
-    g6 = np.array([[xG, y7], [xH, y7], [xH, y6], [xG, y6]])
-    g5 = np.array([[xG, y6], [xH, y6], [xH, y5], [xG, y5]])
-    g4 = np.array([[xG, y5], [xH, y5], [xH, y4], [xG, y4]])
-    g3 = np.array([[xG, y4], [xH, y4], [xH, y3], [xG, y3]])
-    g2 = np.array([[xG, y3], [xH, y3], [xH, y2], [xG, y2]])
-    g1 = np.array([[xG, y2], [xH, y2], [xH, y1], [xG, y1]])
-
-    h8 = np.array([[xH, y9], [xI, y9], [xI, y8], [xH, y8]])
-    h7 = np.array([[xH, y8], [xI, y8], [xI, y7], [xH, y7]])
-    h6 = np.array([[xH, y7], [xI, y7], [xI, y6], [xH, y6]])
-    h5 = np.array([[xH, y6], [xI, y6], [xI, y5], [xH, y5]])
-    h4 = np.array([[xH, y5], [xI, y5], [xI, y4], [xH, y4]])
-    h3 = np.array([[xH, y4], [xI, y4], [xI, y3], [xH, y3]])
-    h2 = np.array([[xH, y3], [xI, y3], [xI, y2], [xH, y2]])
-    h1 = np.array([[xH, y2], [xI, y2], [xI, y1], [xH, y1]])
-
-    # transforms the squares to write FEN
-
-    FEN_annotation = [[a8, b8, c8, d8, e8, f8, g8, h8],
-                      [a7, b7, c7, d7, e7, f7, g7, h7],
-                      [a6, b6, c6, d6, e6, f6, g6, h6],
-                      [a5, b5, c5, d5, e5, f5, g5, h5],
-                      [a4, b4, c4, d4, e4, f4, g4, h4],
-                      [a3, b3, c3, d3, e3, f3, g3, h3],
-                      [a2, b2, c2, d2, e2, f2, g2, h2],
-                      [a1, b1, c1, d1, e1, f1, g1, h1]]
+    # Iterate to create grid squares
+    for row in range(8):  # Rows 8 to 1
+        current_row = []
+        for col in range(8):  # Columns a to h
+            square = np.array([
+                [x_coords[col], y_coords[row + 1]],
+                [x_coords[col + 1], y_coords[row + 1]],
+                [x_coords[col + 1], y_coords[row]],
+                [x_coords[col], y_coords[row]]
+            ])
+            current_row.append(square)
+        FEN_annotation.append(current_row)
 
     board_FEN = [['1' for i in range(8)] for j in range(8)]
 
@@ -466,6 +500,65 @@ def fix_queen_king_issue(past_fen, current_fen):
     return '/'.join([''.join(row) for row in updated_fen_list])
 
 
+def fix_fen(past_fen, current_fen):
+    past_fen_list = [list(row) for row in past_fen.split("/")]
+    current_fen_list = [list(row) for row in current_fen.split("/")]
+    updated_fen_list = [list(row) for row in current_fen.split("/")]
+
+    white_pieces = ['P', 'N', 'R', 'B', 'Q', 'K']
+    black_pieces = ['p', 'n', 'r', 'b', 'q', 'k']
+
+    for i in range(8):
+        for j in range(8):
+            # static checking
+            if past_fen_list[i][j] != current_fen_list[i][j]:
+                # Fix static miss predictions
+                if (past_fen_list[i][j] in black_pieces and current_fen_list[i][j] in black_pieces) or (
+                        past_fen_list[i][j] in white_pieces and current_fen_list[i][j] in white_pieces):
+                    updated_fen_list[i][j] = past_fen_list[i][j]
+                # Fix dynamic miss predictions
+
+                if (current_fen_list[i][j] == '1'):  # a move happened
+                    # check  boxes based on move patterns of the chess pieces
+                    positions = []
+                    piece = past_fen_list[i][j]
+                    if piece == 'p':
+                        positions = [[i + 1, j + x] for x in range(-1, 2) if 0 <= j + x <= 7 and i + 1 <= 7]
+                    if piece == 'P':
+                        positions = [[i - 1, j + x] for x in range(-1, 2) if 0 <= j + x <= 7 and 0 <= i - 1]
+                    elif piece in ['r', 'R']:
+                        positions = [[x, j] for x in range(8) if x != i] + [[i, y] for y in range(8) if y != j]
+                    elif piece in ['b', 'B']:
+                        positions = [[i + x, j + x] for x in range(-7, 8) if
+                                     0 <= i + x <= 7 and 0 <= j + x <= 7 and x != 0] + [[i - x, j + x] for x in
+                                                                                        range(-7, 8) if
+                                                                                        0 <= i - x <= 7 and 0 <= j + x <= 7 and x != 0]
+                        print(positions)
+                    elif piece in ['q', 'Q']:
+                        positions = [[x, j] for x in range(8) if x != i] + [[i, y] for y in range(8) if y != j] + [
+                            [i + x, j + x] for x in range(-7, 8) if 0 <= i + x <= 7 and 0 <= j + x <= 7 and x != 0] + [
+                                        [i - x, j + x] for x in range(-7, 8) if
+                                        0 <= i - x <= 7 and 0 <= j + x <= 7 and x != 0]
+                    elif piece in ['k', 'K']:
+                        positions = [[x, y] for x in range(max(i - 1, 0), min(i + 1, 7) + 1) for y in
+                                     range(max(j - 1, 0), min(j + 1, 7) + 1) if not (x == i and y == j)]
+                    else:  # knight :)
+                        positions = [
+                            [i + dx, j + dy]
+                            for dx, dy in [
+                                (2, 1), (2, -1), (-2, 1), (-2, -1),
+                                (1, 2), (1, -2), (-1, 2), (-1, -2)
+                            ]
+                            if 0 <= i + dx <= 7 and 0 <= j + dy <= 7
+                        ]
+                    for pos in positions:
+                        if (piece in white_pieces and current_fen_list[pos[0]][pos[1]] in white_pieces and
+                            past_fen_list[pos[0]][pos[1]] not in white_pieces) or (
+                                piece in black_pieces and current_fen_list[pos[0]][pos[1]] in black_pieces and
+                                past_fen_list[pos[0]][pos[1]] not in black_pieces):
+                            updated_fen_list[pos[0]][pos[1]] = piece
+
+    return '/'.join([''.join(row) for row in updated_fen_list])
 def make_black_spots_blacker(image_path, output_path, threshold=50):
     """
     Enhances the black spots/pieces in the image by making them darker.
@@ -494,11 +587,27 @@ def make_black_spots_blacker(image_path, output_path, threshold=50):
     img.save(output_path)
     print(f"Image saved to {output_path}")
 
+# def detect_board(image_Path,corners, additional_height,chess_piece_detection_confidence, grayscale_intensity_threshold):
+#
+#     transformed_image = four_point_transform(image_Path, corners, additional_height)
+#
+#     make_black_spots_blacker("transformer_image.jpg", "transformer_image.jpg", grayscale_intensity_threshold)
+#
+#     ptsT, ptsL = plot_grid_on_transformed_image(transformed_image, additional_height)
+#
+#     detections, boxes = chess_pieces_detector_local(transformed_image, chess_piece_detection_confidence)
+#
+#     complete_board_FEN = FEN_transformation(ptsT, ptsL, detections, boxes)
+#
+#     current_fen = '/'.join(complete_board_FEN)
+#
+#     return current_fen
+
 def detect_board(image_Path,corners, additional_height,chess_piece_detection_confidence, grayscale_intensity_threshold):
 
     transformed_image = four_point_transform(image_Path, corners, additional_height)
 
-    make_black_spots_blacker("transformer_image.jpg", "transformer_image.jpg", grayscale_intensity_threshold)
+    #make_black_spots_blacker("transformer_image.jpg", "transformer_image.jpg", grayscale_intensity_threshold)
 
     ptsT, ptsL = plot_grid_on_transformed_image(transformed_image, additional_height)
 

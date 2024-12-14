@@ -58,6 +58,24 @@ def expand_fen(fen):
 
     return '/'.join(expanded_fen)
 
+def rotate_fen_90_degrees(fen: str) -> list:
+    matrix = []
+    ranks = fen.split('/')
+    rotated_fen = []
+    #convert fen to matrix
+    for rank in ranks:
+        row = []
+        for char in rank:
+            row.append(char)
+        matrix.append(row)
+    #rotate fen by 90 degrees
+    for j in range(8):
+        rank = ''
+        for i in range(7,-1,-1):
+            rank += matrix[i][j]
+        rotated_fen.append(rank)
+    return '/'.join(rotated_fen)
+
 
 def determine_chess_move(past_fen, current_fen):
     past_fen_list = past_fen.split("/")

@@ -64,7 +64,7 @@ def detect_corners_API(image_Path, confidence=50):
     return np.array(corners, dtype="float32")
 
 
-def visualize_bounding_boxes(image_path, detection_results, output_path="..\outputs\output_with_boxes.jpg"):
+def visualize_bounding_boxes(image_path, detection_results, output_path="../outputs/output_with_boxes.jpg"):
     """
     Visualize bounding boxes of detected corners on the image and save it in JPG format.
 
@@ -258,7 +258,7 @@ def chess_pieces_detector_API(image):
     return detections, boxes
 
 
-def visualize_chess_pieces(image_path, detection_results, output_path="..\outputs\output_with_chess_pieces.jpg"):
+def visualize_chess_pieces(image_path, detection_results, output_path="../outputs/output_with_chess_pieces.jpg"):
     """
     Visualize bounding boxes for detected chess pieces with class names and colors.
 
@@ -274,7 +274,7 @@ def visualize_chess_pieces(image_path, detection_results, output_path="..\output
         2: (255, 0, 0),  # Blue - Black Knight
         3: (255, 255, 0),  # Cyan - Black Pawn
         4: (255, 0, 255),  # Magenta - Black Queen
-        5: (0, 255, 255),  # Yellow - Black Rook
+        5: (128, 128, 128),  # Grey - Black Rook
         6: (128, 0, 0),  # Dark Red - White Bishop
         7: (0, 128, 0),  # Dark Green - White King
         8: (0, 0, 128),  # Dark Blue - White Knight
@@ -318,8 +318,8 @@ def visualize_chess_pieces(image_path, detection_results, output_path="..\output
 
         # Add class name and confidence score with larger text
         label_text = f"{label} ({confidence:.2f})"
-        font_scale = 1.0  # Increased font scale for larger text
-        thickness = 2  # Increased thickness for better visibility
+        font_scale = 0.35  # Increased font scale for larger text
+        thickness = 1  # Increased thickness for better visibility
         text_size = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
         text_x = x1
         text_y = max(y1 - 10, text_size[1] + 10)  # Ensure text is always visible
@@ -533,7 +533,6 @@ def fix_fen(past_fen, current_fen):
                                      0 <= i + x <= 7 and 0 <= j + x <= 7 and x != 0] + [[i - x, j + x] for x in
                                                                                         range(-7, 8) if
                                                                                         0 <= i - x <= 7 and 0 <= j + x <= 7 and x != 0]
-                        print(positions)
                     elif piece in ['q', 'Q']:
                         positions = [[x, j] for x in range(8) if x != i] + [[i, y] for y in range(8) if y != j] + [
                             [i + x, j + x] for x in range(-7, 8) if 0 <= i + x <= 7 and 0 <= j + x <= 7 and x != 0] + [

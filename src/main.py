@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 # Import necessary libraries
 import time
 from tools.ChessTools import *
@@ -18,7 +22,7 @@ grayscale_intensity_threshold = 70
 image_Path = "../images/image.png"
 fen0 = "rnbqkbnr/pppppppp/11111111/11111111/11111111/11111111/PPPPPPPP/RNBQKBNR"
 past_fen = ""
-stockfish_path = "./Stockfish/src/stockfish"
+stockfish_path = "/home/raspberrypi/Stockfish/src/stockfish"
 stockfish = ""
 counter_corner_detections = 0
 matrice_xy_positions = [[],[],[],[],[],[],[],[]]
@@ -26,13 +30,13 @@ offset_x = 10  # Horizontal translation
 offset_y = 10  # Vertical translation
 gamemode = ""
 elo = 0
-arduino = serial.Serial(port='/dev/ttyUSB0', baudrate=9600, timeout=1)
+#arduino = serial.Serial(port='/dev/ttyUSB0', baudrate=9600, timeout=1)
 out_of_bound_x = -offset_x
 out_of_bound_y = 4*offset_y
 child_made_move = False
-GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
+#GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
 button_pin = 17 
-GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+#GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 

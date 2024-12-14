@@ -7,6 +7,8 @@ import RPi.GPIO as GPIO
 
 from stockfish import Stockfish
 
+# from lcd import LCDController
+import serial
 
 turn = True
 color = "white"
@@ -22,17 +24,17 @@ stockfish_path = "./Stockfish/src/stockfish"
 stockfish = ""
 counter_corner_detections = 0
 matrice_xy_positions = [[],[],[],[],[],[],[],[]]
-offset_x = 10  # Horizontal translation
-offset_y = 10  # Vertical translation
+offset_x = 1  # Horizontal translation
+offset_y = 1  # Vertical translation
 gamemode = ""
 elo = 0
-arduino = serial.Serial(port='/dev/ttyUSB0', baudrate=9600, timeout=1)
+# arduino = serial.Serial(port='/dev/ttyUSB0', baudrate=9600, timeout=1)
 out_of_bound_x = -offset_x
 out_of_bound_y = 4*offset_y
 child_made_move = False
 GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
 button_pin = 17 
-GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+# GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 
@@ -74,6 +76,77 @@ def receive(arduino):
 
 
 
+
+
+
+
+
+
+
+
+
+
+ # hadha code mqtt tmessouch hatsa3 yarka7
+# import paho.mqtt.client as mqtt
+
+# # MQTT Configuration
+# broker = "broker.hivemq.com"
+# port = 1883
+# topic_mode = "chess/mode"
+# topic_elo = "chess/elo"
+
+# # Variables
+# gamemode = ""
+# elo = 0
+
+# # Callback for when the client receives a message
+# def on_message(client, userdata, message):
+#     global gamemode, elo
+
+#     if message.topic == topic_mode:
+#         mode = int(message.payload.decode())
+#         gamemode = {1: "classical", 2: "puzzle", 3: "educational"}.get(mode, "unknown")
+#         print(f"Game mode set to: {gamemode}")
+
+#     if message.topic == topic_elo:
+#         elo = int(message.payload.decode())
+#         print(f"ELO set to: {elo}")
+
+
+# # Main function to set up MQTT
+# def setup_mqtt():
+#     client = mqtt.Client()
+#     client.on_message = on_message
+
+#     client.connect(broker, port)
+#     client.subscribe(topic_mode)
+#     client.subscribe(topic_elo)
+
+#     client.loop_start()  # Non-blocking loop to keep receiving messages
+#     return client
+
+
+# # Main Logic
+# try:
+#     mqtt_client = setup_mqtt()
+#     print("Waiting for mode and ELO selection...")
+#     while True:
+#         pass  # Replace with actual chess game logic
+# except KeyboardInterrupt:
+#     pass
+# finally:
+#     mqtt_client.loop_stop()
+#     mqtt_client.disconnect()
+
+
+
+
+
+
+
+
+
+
 def setup():
     global turn, color, corners, chess_corner_detection_confidence, image_Path, past_fen, grayscale_intensity_threshold
     global chess_piece_detection_confidence, chess_corner_detection_confidence, fen0, stockfish_path, stockfish
@@ -108,34 +181,34 @@ def setup():
     gamemode = 'classical' #default
     elo = 1200 #default
 
-    # Initialize Stockfish engine
-    stockfish = Stockfish(path=stockfish_path,parameters={"UCI_Elo": elo})  # Replace with your path
-    stockfish.set_depth(15)
+    # # Initialize Stockfish engine
+    # stockfish = Stockfish(path=stockfish_path,parameters={"UCI_Elo": elo})  # Replace with your path
+    # stockfish.set_depth(15)
 
-    while past_fen != fen0:
+    # while past_fen != fen0:
 
-        # Capture a frame
-        capture_image(image_Path)
+    #     # Capture a frame
+    #     capture_image(image_Path)
 
-        # detect board
+    #     # detect board
 
-        corners = detect_corners_local(image_Path, chess_corner_detection_confidence)
+    #     corners = detect_corners_local(image_Path, chess_corner_detection_confidence)
 
-        past_fen = detect_board(image_Path,corners, additional_height,chess_piece_detection_confidence,grayscale_intensity_threshold)
+    #     past_fen = detect_board(image_Path,corners, additional_height,chess_piece_detection_confidence,grayscale_intensity_threshold)
 
-        #print_board_from_fen(past_fen)
+    #     #print_board_from_fen(past_fen)
 
-        past_fen = fix_queen_king_issue(fen0, past_fen)
+    #     past_fen = fix_queen_king_issue(fen0, past_fen)
 
-        print_board_from_fen(past_fen)
+    #     print_board_from_fen(past_fen)
 
-        if past_fen != fen0:
-            print("Please reorganize the pieces!!!")
+    #     if past_fen != fen0:
+    #         print("Please reorganize the pieces!!!")
 
-    stockfish.set_fen_position(compress_fen(past_fen))
+    # stockfish.set_fen_position(compress_fen(past_fen))
 
-    #disables ne passant and king/queen side castling
-    disable_special_moves(stockfish)
+    # #disables ne passant and king/queen side castling
+    # disable_special_moves(stockfish)
 
 
 def main():
@@ -268,5 +341,7 @@ def cleanup_gpio():
 # Entry point of the script
 if __name__ == "__main__":
     setup()
-    main()  # Run main program
+    print("hamdoullah")
+    # main()  # Run main program
     # cleanup_gpio()
+

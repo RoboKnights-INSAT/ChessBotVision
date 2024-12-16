@@ -58,6 +58,24 @@ def expand_fen(fen):
 
     return '/'.join(expanded_fen)
 
+def rotate_fen_90_degrees(fen: str) -> list:
+    matrix = []
+    ranks = fen.split('/')
+    rotated_fen = []
+    #convert fen to matrix
+    for rank in ranks:
+        row = []
+        for char in rank:
+            row.append(char)
+        matrix.append(row)
+    #rotate fen by 90 degrees
+    for j in range(8):
+        rank = ''
+        for i in range(7,-1,-1):
+            rank += matrix[i][j]
+        rotated_fen.append(rank)
+    return '/'.join(rotated_fen)
+
 
 def determine_chess_move(past_fen, current_fen):
     past_fen_list = past_fen.split("/")
@@ -102,13 +120,21 @@ def is_one_move(past_fen, current_fen):
     current_fen_list.reverse()
     start_key = True
     finish_key = True
+    
+    white_pieces = ['P', 'N', 'R', 'B', 'Q', 'K']
+    black_pieces = ['p', 'n', 'r', 'b', 'q', 'k']
+
     for i in range(8):
         for j in range(8):
-            if past_fen_list[i][j] != current_fen_list[i][j]:
-                if (current_fen_list[i][j] == '1') and (start_key):
-                    start_key = False
-                elif finish_key:
+            if (past_fen_list[i][j] in white_pieces + ['1'] and  current_fen_list[i][j] in black_pieces) or (past_fen_list[i][j] in black_pieces + ['1'] and  current_fen_list[i][j] in white_pieces ):
+                if(finish_key):
                     finish_key = False
+                else:
+                    print("past and current fen are seperated by multiple moves")
+                    return False  # false value
+            if(past_fen_list[i][j] in white_pieces + black_pieces and current_fen_list[i][j] == '1'):
+                if(start_key):
+                    start_key = False
                 else:
                     print("past and current fen are seperated by multiple moves")
                     return False  # false value
@@ -118,11 +144,18 @@ def is_one_move(past_fen, current_fen):
 
     return True
 
-def is_move_valid(past_fen, move):
+def is_move_valid(past_fen, move, color):
     past_fen = compress_fen(past_fen)
     # Initialize the board with the previous FEN position
+    if(color == "white"):
+        past_fen += " w"
+    else:
+        past_fen += " b"
+    past_fen += " KQkq - 0 1"
+    
     board = chess.Board(past_fen)
-    # Parse the move in UCI format
+    legal_moves_uci = [str(move) for move in board.legal_moves]
+
     try:
         chess_move = chess.Move.from_uci(move)
     except ValueError:

@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from tools.ChessTools import *
 from tools.computer_vision_tools import *
 
@@ -12,7 +16,7 @@ corners = []
 additional_height = 20
 chess_piece_detection_confidence = 40
 grayscale_intensity_threshold = 70
-past_fen = ""
+past_fen = "rnbkqbnr/pppppppp/11111111/11111111/11111111/11111111/PPPPPPPP/RNBQKBNR"
 image_Path = "../images/image.png"
 
 print("waiting for cam to read 4 corners...")
@@ -27,7 +31,6 @@ while len(corners) != 4:
 
     corners = detect_corners_local(image_Path,confidence=9)
     sleep(0.1)
-
 #api models
 
 # corners = detect_corners_API(image_Path,9)
@@ -58,19 +61,23 @@ start_time = time()
 current_fen = detect_board(image_Path, corners, additional_height, chess_piece_detection_confidence,
                            grayscale_intensity_threshold)
 
-print_board_from_fen(current_fen)
+current_fen = rotate_fen_90_degrees(current_fen)
+
+print("detected board" , current_fen)
+print_board_from_fen(compress_fen(current_fen))
 
 
 if not is_one_move(past_fen, current_fen):  # check if there is more than 1 or no moves made
     print("doodoo")
+else:
+    current_fen = fix_fen(past_fen, current_fen)
 
-current_fen = fix_fen(past_fen, current_fen)
+    print(current_fen)
+    print_board_from_fen(compress_fen(current_fen))
 
-print_board_from_fen(current_fen)
+    move = determine_chess_move(past_fen, current_fen)
 
-move = determine_chess_move(past_fen, current_fen)
-
-print(move)
+    print(move)
 
 
 elapsed_time = time() - start_time

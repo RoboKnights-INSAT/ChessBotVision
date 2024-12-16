@@ -17,13 +17,14 @@ def print_board(stockfish):
 
 # Function to simulate a game
 def simulate_game():
-    stockfish.set_position([])  # Start from the initial position
+    stockfish.set_position("rnbqkbnr/ppppppp/11111111/11111111/11111111/11111111/PPPPPPPP/RNBQKBNR")  # Start from the initial position
 
     # Play until the game ends
     while True:
         # Get the best move for the current player (Stockfish plays for both sides)
         move = stockfish.get_best_move()
-
+        print(move)
+        
         if not move:
             print("Game over")
             break
@@ -34,6 +35,7 @@ def simulate_game():
         # Print the current board after the move
         print(f"Move: {move}")
         print_board(stockfish)
+        break
 
 
 if __name__ == "__main__":

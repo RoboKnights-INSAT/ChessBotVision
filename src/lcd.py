@@ -12,6 +12,7 @@ topic_mode = "chess/mode"
 topic_elo = "chess/elo"
 topic_color = "chess/color"
 topic_hint = "lcd/hint"
+topic_better_move = "lcd/bettermove"
 topic_send_hint = "chess/SendHint"
 topic_restart = "chess/restart"
 topic_done = "chess/done"
@@ -37,14 +38,22 @@ last_display = ["", ""]  # Cache to track last LCD content
 def on_message(client, userdata, message):
     if message.topic == topic_hint:
         hint = message.payload.decode()
-        display_message('Hint:', f"{hint[0]}{hint[1]}","to",f"{hint[2]}{hint[3]}", 4)
+        display_message('Hint:', f"{hint[0]}{hint[1]} to {hint[2]}{hint[3]}", 4)
         display_message('Educational Mode', 'Press Help!')
+    elif message.topic == topic_better_move:
+        best_move = message.payload.decode()
+        if(best_move == "You got the best move!"):
+            display_message(best_move[:16],best_move[16:], 3)
+        else:
+            display_message("The best move is",best_move,3)
 
 # MQTT Client Setup
 mqtt_client = mqtt.Client()
 mqtt_client.on_message = on_message
 mqtt_client.connect(broker, port)
 mqtt_client.subscribe(topic_hint)
+mqtt_client.subscribe(topic_better_move)
+
 
 # Start the loop
 mqtt_client.loop_start()
@@ -186,8 +195,9 @@ def educational_mode():
 
         # If Help button is released within 3 seconds, show a hint
         if start_time is not None and (time.time() - start_time < 3):
-            display_message('wait for ', 'Hint', 4)
+            display_message('wait for ', 'Hint', 3)
             mqtt_client.publish(topic_send_hint, "hetli hint") 
+            print("message sen")
 
         # if proceed cicked
         check_finish_turn()

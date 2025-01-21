@@ -8,6 +8,16 @@ from tools.computer_vision_tools import *
 #from picamzero import Camera
 from time import *
 
+# Configure webcam settings
+os.system("v4l2-ctl -d /dev/video0 --set-ctrl=auto_exposure=1")
+os.system("v4l2-ctl -d /dev/video0 --set-ctrl=exposure_time_absolute=0")
+os.system("v4l2-ctl -d /dev/video0 --set-ctrl=white_balance_automatic=0")
+os.system("v4l2-ctl -d /dev/video0 --set-ctrl=white_balance_temperature=4600")
+os.system("v4l2-ctl -d /dev/video0 --set-ctrl=brightness=-30")
+os.system("v4l2-ctl -d /dev/video0 --set-ctrl=contrast=32")
+os.system("v4l2-ctl -d /dev/video0 --set-ctrl=gain=0")
+os.system("v4l2-ctl -d /dev/video0 --set-ctrl=sharpness=6")
+
 # Capture a frame
 cap = cv2.VideoCapture(0)
 corners = []

@@ -14,6 +14,22 @@ import paho.mqtt.client as mqtt
 
 import requests
 
+# Configure webcam settings
+def setup_camera():
+   # Set exposure to Manual Mode
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=auto_exposure=1")  # Disable Auto Exposure
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=exposure_time_absolute=157")  # Set exposure time to manual
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=white_balance_automatic=0")  # Disable automatic white balance
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=white_balance_temperature=1200")  # Set white balance temperature
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=brightness=35")  # Set brightness (default 133)
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=contrast=3")  # Set contrast (default 5)
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=saturation=120")  # Set saturation (default 120)
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=sharpness=25")  # Set sharpness (default)
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=backlight_compensation=0")  # Set backlight compensation off
+
+    # Set power line frequency to 60Hz to avoid flickering
+    os.system("v4l2-ctl -d /dev/video0 --set-ctrl=power_line_frequency=2")  # Set to 60 Hz (avoids flickering)
+
 # The base URL for your API
 BASE_URL = 'http://192.168.31.125:5000/api/api'
 
@@ -68,6 +84,7 @@ topic_elo = "chess/elo"
 topic_color = "chess/color"
 topic_send_hint = "chess/SendHint"
 topic_hint = "lcd/hint"
+topic_better_move = "lcd/bettermove"
 topic_restart = "chess/restart"
 topic_done = "chess/done"
 
@@ -79,10 +96,10 @@ gameStarted = False
 turn = True
 color = ""
 color_child = ""
-additional_height = 50
+additional_height = 20
 corners = []
 chess_corner_detection_confidence = 9
-chess_piece_detection_confidence = 25
+chess_piece_detection_confidence = 9
 grayscale_intensity_threshold = 70
 image_Path = "../images/image.png"
 fen0 = "rnbqkbnr/pppppppp/11111111/11111111/11111111/11111111/PPPPPPPP/RNBQKBNR"
@@ -97,6 +114,7 @@ offset_y = 1  # Vertical translation
 # gamemode = ""
 # elo = 0
 arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600, timeout=1)
+arduino = None
 out_of_bound_x = 0
 out_of_bound_y = 0
 child_made_move = False
@@ -104,7 +122,7 @@ child_made_move = False
 button_pin = 17 
 #GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 moves_counter = 2
-
+mqtt_client = None
 
 
 # Callback for when the client receives a message
@@ -172,6 +190,7 @@ def setup_mqtt():
 
 def capture_image(image_Path):
     # Capture a frame
+    #reset_camera_to_defaults()
     cap = cv2.VideoCapture(0)
     ret, img = cap.read()  # Unpack the tuple
 
@@ -181,7 +200,6 @@ def capture_image(image_Path):
         print("Failed to capture image from webcam.")
 
     cap.release()  # Release the webcam resource
-
     # future code for picamera
     # cam = Camera()
     # cam.start_preview()
@@ -200,6 +218,7 @@ def receive(arduino):
         # Wait for and read the response
         response = arduino.readline().decode('utf-8').strip()
         return response
+        # return "jawna behi"
 
     except Exception as e:
         print(f"Error: {e}")
@@ -210,9 +229,9 @@ def receive(arduino):
 def setup():
     global turn, color, corners, chess_corner_detection_confidence, image_Path, past_fen, grayscale_intensity_threshold
     global chess_piece_detection_confidence, chess_corner_detection_confidence, fen0, stockfish_path, stockfish
-    global matrice_xy_positions, offset_x, offset_y, gamemode, elo, arduino, color_child
+    global matrice_xy_positions, offset_x, offset_y, gamemode, elo, arduino, color_child, mqtt_client
 
-    # Initialize the serial connection
+    #setup_camera()    # Initialize the serial connection
     arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600, timeout=1)  # Adjust the port as needed
     mqtt_client = setup_mqtt()
     print("waiting for user to choose settings...")
@@ -294,7 +313,7 @@ def setup():
 def main():
     global turn, color, corners, chess_corner_detection_confidence, image_Path, past_fen, grayscale_intensity_threshold
     global chess_piece_detection_confidence, chess_corner_detection_confidence, fen0, stockfish, counter_corner_detections
-    global matrice_xy_positions, offset_x, offset_y, gamemode, elo, arduino, child_made_move, color_child
+    global matrice_xy_positions, offset_x, offset_y, gamemode, elo, arduino, child_made_move, color_child, mqtt_client
 
     try:
         while True:
@@ -419,12 +438,16 @@ def main():
                     else:
                         if is_move_valid(past_fen, move, color_child):
                             if gamemode == "educational":
-                                if(move == stockfish.get_best_move()):
+                                best_move = stockfish.get_best_move()
+                                if(move == best_move):
                                     #print in the lcd :)
                                     print("good job you got the best move")
+                                    mqtt_client.publish(topic_better_move,"You got the best move!")
                                 else:
                                     #print in the lcd the best move
-                                    print(f"The best move is {stockfish.get_best_move()} not {move}")
+                                    print(f"The best move is {best_move} not {move}")
+                                    mqtt_client.publish(topic_better_move,best_move)
+
 
                             if is_game_over(stockfish) and stockfish.get_best_move() == move:
                                 print("game is over chess player won")

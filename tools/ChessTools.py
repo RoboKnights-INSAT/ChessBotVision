@@ -90,18 +90,25 @@ def determine_chess_move(past_fen, current_fen):
     promote = ""
     for i in range(8):
         for j in range(8):
-            if past_fen_list[i][j] != current_fen_list[i][j]:
-                if (current_fen_list[i][j] == '1') and (start_key):
+            if past_fen_list[i][j] != current_fen_list[i][j] and current_fen_list[i][j] == '1':
+                if(start_key):
                     start = chr(97 + j) + str(i + 1)
                     start_pos = [i, j]
                     start_key = False
-                elif finish_key:
+                else:
+                    print("past and current fen are seperated by multiple moves")
+                    return ''  # false value
+    for i in range(8):
+        for j in range(8):
+            if past_fen_list[i][j] != current_fen_list[i][j] and current_fen_list[i][j]!= '1':
+                if finish_key:
                     finish = chr(97 + j) + str(i + 1)
                     # Check for promotion if a pawn has reached the last rank
-                    if i == 7 and past_fen_list[start_pos[0]][start_pos[1]] == 'P':  # white pawn promotion
-                        promote = current_fen_list[i][j].lower()
-                    if i == 0 and past_fen_list[start_pos[0]][start_pos[1]] == 'p':  # black pawn promotion
-                        promote = current_fen_list[i][j].lower()
+                    if not start_key:
+                        if i == 7 and past_fen_list[start_pos[0]][start_pos[1]] == 'P':  # white pawn promotion
+                            promote = current_fen_list[i][j].lower()
+                        if i == 0 and past_fen_list[start_pos[0]][start_pos[1]] == 'p':  # black pawn promotion
+                            promote = current_fen_list[i][j].lower()
                     finish_key = False
                 else:
                     print("past and current fen are seperated by multiple moves")

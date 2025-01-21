@@ -68,30 +68,26 @@ This repository contains the implementation of a **Chess Coach** system designed
 ## Project Structure
 
 ```
-chess-bot-vision-TSYP/
-├── images/
-│   ├── image7.jpg
-│   ├── image8.jpg
-│   ├── image9.jpg
-│   ├── image10.jpg
-│   ├── image11.jpg
-│   ├── image12.jpg
-│   ├── image13.jpg
-│   ├── image14.jpg
-│   └── transformer_image.jpg
-├── .gitignore                  # Git ignore file
-├── app.py                      # Main application entry point
-├── best_chesspiece_model.pt    # YOLO model for chess piece detection
-├── best_corner_detection_model.pt # Model for chessboard corner detection
-├── chessboard_transformed_with_grid.jpg # Processed chessboard visualization
-├── ChessTools.py               # Utility functions for chess-specific operations
-├── computer_vision_tools.py    # Computer vision tools for detection
-├── main.py                     # Main logic for chess game interaction
-├── notebooks/
-│   ├── app.ipynb               # Jupyter notebook for app development
-│   └── chess_move_detection.ipynb # Notebook for move detection analysis
-├── README.md                   # Project documentation
-├── requirements.txt            # Python dependencies
+Directory structure:
+└── roboknights-insat-chessbotvision/
+    ├── README.md
+    ├── requirements.txt
+    ├── images/
+    ├── models/
+    │   ├── best_chesspiece_model.pt
+    │   └── best_corner_detection_model.pt
+    ├── notebooks/
+    │   ├── app.ipynb
+    │   └── chess_move_detection.ipynb
+    ├── outputs/
+    ├── src/
+    │   ├── app.py
+    │   ├── lcd.py
+    │   ├── main.py
+    │   └── stockfish_test.py
+    └── tools/
+        ├── ChessTools.py
+        └── computer_vision_tools.py
 ```
 
 
